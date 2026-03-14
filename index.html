@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FitBattle — Enzo vs Lisa</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080a0f;
+  --surface: #0e1118;
+  --card: #131720;
+  --border: #1e2535;
+  --enzo: #ff6b35;
+  --lisa: #00d4aa;
+  --gold: #ffd166;
+  --text: #e8edf5;
+  --muted: #4a5568;
+  --muted2: #2d3748;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Barlow', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* BG animated */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 20%, rgba(255,107,53,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(0,212,170,0.06) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ===== HEADER ===== */
+header {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 3rem 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.logo {
+  font-family: 'Bebas Neue', cursive;
+  font-size: clamp(3rem, 8vw, 6rem);
+  letter-spacing: 0.1em;
+  background: linear-gradient(135deg, var(--enzo), var(--gold), var(--lisa));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+.logo-sub {
+  font-size: 0.8rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 0.3rem;
+}
+.challenge-dates {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-top: 1rem;
+  padding: 0.5rem 1.2rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.challenge-dates span { color: var(--text); font-weight: 600; }
+.days-left {
+  background: var(--gold);
+  color: #000;
+  padding: 0.15rem 0.6rem;
+  border-radius: 100px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+/* ===== MAIN LAYOUT ===== */
+main {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+}
+
+/* ===== VERSUS BLOCK ===== */
+.versus {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 1.5rem;
+  align-items: start;
+  margin-bottom: 2rem;
+}
+.player-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s;
+}
+.player-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.player-card.enzo::before { background: linear-gradient(90deg, var(--enzo), transparent); }
+.player-card.lisa::before { background: linear-gradient(90deg, var(--lisa), transparent); }
+.player-card.leader { transform: scale(1.02); }
+.player-card.enzo.leader { border-color: rgba(255,107,53,0.4); box-shadow: 0 0 30px rgba(255,107,53,0.1); }
+.player-card.lisa.leader { border-color: rgba(0,212,170,0.4); box-shadow: 0 0 30px rgba(0,212,170,0.1); }
+
+.player-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+.avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.2s;
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.player-card.enzo .avatar { border-color: rgba(255,107,53,0.5); }
+.player-card.lisa .avatar { border-color: rgba(0,212,170,0.5); }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.player-name {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 2rem;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+.player-card.enzo .player-name { color: var(--enzo); }
+.player-card.lisa .player-name { color: var(--lisa); }
+.player-badge {
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 0.15rem;
+}
+.leader-crown { font-size: 1rem; margin-left: 0.3rem; }
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.82rem;
+}
+.stat-row:last-child { border-bottom: none; }
+.stat-label { color: var(--muted); }
+.stat-value { font-weight: 700; font-size: 1rem; }
+.enzo .stat-value { color: var(--enzo); }
+.lisa .stat-value { color: var(--lisa); }
+
+.kcal-big {
+  text-align: center;
+  margin: 1rem 0;
+  padding: 1rem;
+  background: var(--surface);
+  border-radius: 10px;
+}
+.kcal-number {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 3rem;
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+.enzo .kcal-number { color: var(--enzo); }
+.lisa .kcal-number { color: var(--lisa); }
+.kcal-unit { font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+
+/* Progress bar */
+.progress-wrap { margin-top: 0.8rem; }
+.progress-label { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--muted); margin-bottom: 0.3rem; }
+.progress-track { background: var(--surface); border-radius: 100px; height: 6px; overflow: hidden; }
+.progress-fill {
+  height: 100%;
+  border-radius: 100px;
+  transition: width 0.6s cubic-bezier(.34,1.56,.64,1);
+}
+.enzo .progress-fill { background: linear-gradient(90deg, var(--enzo), #ff9a6c); }
+.lisa .progress-fill { background: linear-gradient(90deg, var(--lisa), #67ffe0); }
+
+/* VS middle */
+.vs-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding-top: 1rem;
+}
+.vs-text {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 2.5rem;
+  color: var(--muted2);
+  letter-spacing: 0.1em;
+}
+.vs-diff {
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.vs-diff strong { color: var(--gold); display: block; font-size: 1.2rem; font-family: 'Bebas Neue', cursive; }
+
+/* ===== LOG SECTION ===== */
+.section-title {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.5rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.log-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.log-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  position: relative;
+}
+.log-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 16px 16px 0 0;
+}
+.log-card.enzo::before { background: linear-gradient(90deg, var(--enzo), transparent); }
+.log-card.lisa::before { background: linear-gradient(90deg, var(--lisa), transparent); }
+
+.log-title {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.3rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 1.2rem;
+}
+.log-card.enzo .log-title { color: var(--enzo); }
+.log-card.lisa .log-title { color: var(--lisa); }
+
+.form-group {
+  margin-bottom: 0.9rem;
+}
+.form-label {
+  display: block;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+}
+.form-input, .form-select {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 0.55rem 0.8rem;
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.log-card.enzo .form-input:focus,
+.log-card.enzo .form-select:focus { border-color: var(--enzo); }
+.log-card.lisa .form-input:focus,
+.log-card.lisa .form-select:focus { border-color: var(--lisa); }
+
+.btn {
+  width: 100%;
+  padding: 0.7rem;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.1rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+}
+.btn:hover { opacity: 0.9; }
+.btn:active { transform: scale(0.98); }
+.btn-enzo { background: var(--enzo); color: #fff; }
+.btn-lisa { background: var(--lisa); color: #000; }
+
+.kcal-preview {
+  text-align: center;
+  padding: 0.6rem;
+  background: var(--surface);
+  border-radius: 8px;
+  margin-bottom: 0.9rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.kcal-preview strong { font-size: 1.1rem; }
+.log-card.enzo .kcal-preview strong { color: var(--enzo); }
+.log-card.lisa .kcal-preview strong { color: var(--lisa); }
+
+/* Conversion helper */
+.conv-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+/* Log history */
+.log-history {
+  max-height: 180px;
+  overflow-y: auto;
+  margin-top: 1rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.8rem;
+}
+.log-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 0.75rem;
+}
+.log-entry-date { color: var(--muted); }
+.log-entry-kcal { font-weight: 700; }
+.log-card.enzo .log-entry-kcal { color: var(--enzo); }
+.log-card.lisa .log-entry-kcal { color: var(--lisa); }
+.log-entry-del {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 0 0.3rem;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+.log-entry-del:hover { opacity: 1; color: #f87171; }
+
+/* ===== CHART ===== */
+.chart-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+.chart-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+.chart-tab {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 0.35rem 0.9rem;
+  border-radius: 100px;
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.05em;
+}
+.chart-tab.active {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+  font-weight: 700;
+}
+
+/* ===== SETTINGS ===== */
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.settings-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.2rem 1.5rem;
+}
+.settings-title {
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+.btn-ghost {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
+.btn-ghost:hover { border-color: var(--text); color: var(--text); }
+.btn-danger {
+  background: none;
+  border: 1px solid rgba(248,113,113,0.3);
+  color: #f87171;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+.btn-danger:hover { background: rgba(248,113,113,0.1); }
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 460px;
+  position: relative;
+}
+.modal-title {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.8rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 1.5rem;
+}
+.modal-close {
+  position: absolute;
+  top: 1rem; right: 1rem;
+  background: none; border: none;
+  color: var(--muted); font-size: 1.2rem;
+  cursor: pointer;
+}
+.modal-close:hover { color: var(--text); }
+.btn-primary {
+  width: 100%;
+  padding: 0.8rem;
+  background: linear-gradient(135deg, var(--enzo), var(--lisa));
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.2rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: opacity 0.2s;
+}
+.btn-primary:hover { opacity: 0.9; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* Animations */
+@keyframes fadeIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
+.player-card, .log-card, .chart-section, .settings-card {
+  animation: fadeIn 0.5s ease both;
+}
+.player-card.lisa, .log-card.lisa { animation-delay: 0.1s; }
+
+/* Winner banner */
+.winner-banner {
+  text-align: center;
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(255,209,102,0.1), rgba(255,209,102,0.05));
+  border: 1px solid rgba(255,209,102,0.3);
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  display: none;
+}
+.winner-banner.show { display: block; }
+.winner-text {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.5rem;
+  color: var(--gold);
+  letter-spacing: 0.1em;
+}
+
+@media (max-width: 768px) {
+  .versus { grid-template-columns: 1fr; }
+  .vs-center { flex-direction: row; padding: 0; }
+  .log-grid { grid-template-columns: 1fr; }
+  .settings-grid { grid-template-columns: 1fr; }
+  .conv-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- SETUP MODAL -->
+<div class="modal-overlay open" id="setupModal">
+  <div class="modal">
+    <div class="modal-title">⚡ Nouveau Défi</div>
+    <div class="form-group">
+      <label class="form-label">Date de début</label>
+      <input type="date" class="form-input" id="setupStart">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Date de fin</label>
+      <input type="date" class="form-input" id="setupEnd">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="form-group">
+        <label class="form-label">Poids Enzo (kg)</label>
+        <input type="number" class="form-input" id="setupEnzoWeight" placeholder="85" min="30" max="300">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Poids Lisa (kg)</label>
+        <input type="number" class="form-input" id="setupLisaWeight" placeholder="60" min="30" max="300">
+      </div>
+    </div>
+    <button class="btn-primary" onclick="startChallenge()">🔥 Lancer le défi</button>
+  </div>
+</div>
+
+<!-- RESET CONFIRM MODAL -->
+<div class="modal-overlay" id="resetModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('resetModal')">✕</button>
+    <div class="modal-title">⚠️ Reset le défi ?</div>
+    <p style="color:var(--muted);font-size:0.88rem;margin-bottom:1.5rem;line-height:1.6;">
+      Toutes les données seront effacées. Tu devras reconfigurer un nouveau défi.
+    </p>
+    <button class="btn-danger" style="font-size:0.9rem;padding:0.7rem;" onclick="resetChallenge()">Oui, tout effacer</button>
+    <button class="btn-ghost" style="margin-top:0.5rem;" onclick="closeModal('resetModal')">Annuler</button>
+  </div>
+</div>
+
+<!-- AVATAR MODAL -->
+<div class="modal-overlay" id="avatarModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('avatarModal')">✕</button>
+    <div class="modal-title" id="avatarModalTitle">Changer la photo</div>
+    <p style="color:var(--muted);font-size:0.82rem;margin-bottom:1rem;">Colle une URL d'image ou upload une photo</p>
+    <div class="form-group">
+      <label class="form-label">URL de l'image</label>
+      <input type="text" class="form-input" id="avatarUrl" placeholder="https://...">
+    </div>
+    <div style="text-align:center;color:var(--muted);font-size:0.8rem;margin:0.5rem 0;">— ou —</div>
+    <div class="form-group">
+      <label class="form-label">Upload depuis ton appareil</label>
+      <input type="file" class="form-input" id="avatarFile" accept="image/*" style="padding:0.3rem;">
+    </div>
+    <button class="btn-primary" onclick="saveAvatar()">Enregistrer</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">FitBattle</div>
+  <div class="logo-sub">Enzo vs Lisa — Qui va craquer en premier ?</div>
+  <div class="challenge-dates" id="challengeDates">
+    <span id="dateDisplay">—</span>
+    <span class="days-left" id="daysLeft">—</span>
+  </div>
+</header>
+
+<main>
+  <!-- WINNER BANNER -->
+  <div class="winner-banner" id="winnerBanner">
+    <div class="winner-text" id="winnerText">🏆 — remporte le défi !</div>
+  </div>
+
+  <!-- VERSUS -->
+  <div class="versus">
+    <!-- ENZO -->
+    <div class="player-card enzo" id="enzoCard">
+      <div class="player-header">
+        <div class="avatar" id="enzoAvatar" onclick="openAvatarModal('enzo')">🧑</div>
+        <div>
+          <div class="player-name">Enzo <span class="leader-crown" id="enzoCrown" style="display:none">👑</span></div>
+          <div class="player-badge" id="enzoBadge">Challenger</div>
+        </div>
+      </div>
+      <div class="kcal-big">
+        <div class="kcal-number" id="enzoKcal">0</div>
+        <div class="kcal-unit">kcal brûlées</div>
+      </div>
+      <div class="stat-row"><span class="stat-label">Poids actuel</span><span class="stat-value" id="enzoWeight">— kg</span></div>
+      <div class="stat-row"><span class="stat-label">Sessions</span><span class="stat-value" id="enzoSessions">0</span></div>
+      <div class="stat-row"><span class="stat-label">Moy. / session</span><span class="stat-value" id="enzoAvg">— kcal</span></div>
+      <div class="stat-row"><span class="stat-label">Meilleure séance</span><span class="stat-value" id="enzoBest">— kcal</span></div>
+      <div class="stat-row"><span class="stat-label">🍔 Fast foods</span><span class="stat-value" id="enzoFFCount" style="color:#f87171">0</span></div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>Progression défi</span><span id="enzoPct">0%</span></div>
+        <div class="progress-track"><div class="progress-fill" id="enzoBar" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <!-- VS -->
+    <div class="vs-center">
+      <div class="vs-text">VS</div>
+      <div class="vs-diff">
+        <strong id="diffText">0 kcal</strong>
+        d'écart
+      </div>
+    </div>
+
+    <!-- LISA -->
+    <div class="player-card lisa" id="lisaCard">
+      <div class="player-header">
+        <div class="avatar" id="lisaAvatar" onclick="openAvatarModal('lisa')">👩</div>
+        <div>
+          <div class="player-name">Lisa <span class="leader-crown" id="lisaCrown" style="display:none">👑</span></div>
+          <div class="player-badge" id="lisaBadge">Challenger</div>
+        </div>
+      </div>
+      <div class="kcal-big">
+        <div class="kcal-number" id="lisaKcal">0</div>
+        <div class="kcal-unit">kcal brûlées</div>
+      </div>
+      <div class="stat-row"><span class="stat-label">Poids actuel</span><span class="stat-value" id="lisaWeight">— kg</span></div>
+      <div class="stat-row"><span class="stat-label">Sessions</span><span class="stat-value" id="lisaSessions">0</span></div>
+      <div class="stat-row"><span class="stat-label">Moy. / session</span><span class="stat-value" id="lisaAvg">— kcal</span></div>
+      <div class="stat-row"><span class="stat-label">Meilleure séance</span><span class="stat-value" id="lisaBest">— kcal</span></div>
+      <div class="stat-row"><span class="stat-label">🍔 Fast foods</span><span class="stat-value" id="lisaFFCount" style="color:#f87171">0</span></div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>Progression défi</span><span id="lisaPct">0%</span></div>
+        <div class="progress-track"><div class="progress-fill" id="lisaBar" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG SECTION -->
+  <div class="section-title">🔥 Ajouter une séance</div>
+  <div class="log-grid">
+    <!-- ENZO LOG -->
+    <div class="log-card enzo">
+      <div class="log-title">Enzo — Nouvelle séance</div>
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input type="date" class="form-input" id="enzoDate">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Type d'activité</label>
+        <select class="form-select" id="enzoActivity" onchange="updatePreview('enzo')">
+          <option value="running">🏃 Course à pied</option>
+          <option value="cycling">🚴 Vélo</option>
+          <option value="swimming">🏊 Natation</option>
+          <option value="weight">🏋️ Musculation</option>
+          <option value="hiit">⚡ HIIT / Cross</option>
+          <option value="boxing">🥊 Boxe</option>
+          <option value="yoga">🧘 Yoga / Stretching</option>
+          <option value="walking">🚶 Marche (en pas)</option>
+        </select>
+      </div>
+      <!-- Kcal field (all activities except walking) -->
+      <div class="form-group" id="enzoKcalGroup">
+        <label class="form-label">Kcal brûlées (total)</label>
+        <input type="number" class="form-input" id="enzoManual" placeholder="ex: 450" min="0" oninput="updatePreview('enzo')">
+      </div>
+      <!-- Steps field (walking only) -->
+      <div class="form-group" id="enzoStepsGroup" style="display:none">
+        <label class="form-label">Nombre de pas</label>
+        <input type="number" class="form-input" id="enzoSteps" placeholder="ex: 8000" min="0" oninput="updatePreview('enzo')">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Poids actuel (kg)</label>
+        <input type="number" class="form-input" id="enzoNewWeight" placeholder="Optionnel" min="30" max="300">
+      </div>
+      <div class="kcal-preview" id="enzoPreviewBox">Total : <strong id="enzoPreview">—</strong> kcal</div>
+      <button class="btn btn-enzo" onclick="addLog('enzo')">+ Ajouter la séance</button>
+
+      <!-- FAST FOOD -->
+      <div style="border-top:1px solid var(--border);margin-top:1rem;padding-top:1rem;">
+        <div style="font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:0.7rem;">🍔 Fast food du jour</div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:0.5rem;align-items:end;">
+          <div>
+            <label class="form-label">Nombre de fast foods</label>
+            <input type="number" class="form-input" id="enzoFF" placeholder="1" min="0" max="20">
+          </div>
+          <button class="btn btn-enzo" style="width:auto;padding:0.55rem 1rem;font-size:0.9rem;" onclick="addFastFood('enzo')">+ Ajouter</button>
+        </div>
+      </div>
+
+      <div class="log-history" id="enzoHistory"></div>
+    </div>
+
+    <!-- LISA LOG -->
+    <div class="log-card lisa">
+      <div class="log-title">Lisa — Nouvelle séance</div>
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input type="date" class="form-input" id="lisaDate">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Type d'activité</label>
+        <select class="form-select" id="lisaActivity" onchange="updatePreview('lisa')">
+          <option value="running">🏃 Course à pied</option>
+          <option value="cycling">🚴 Vélo</option>
+          <option value="swimming">🏊 Natation</option>
+          <option value="weight">🏋️ Musculation</option>
+          <option value="hiit">⚡ HIIT / Cross</option>
+          <option value="boxing">🥊 Boxe</option>
+          <option value="yoga">🧘 Yoga / Stretching</option>
+          <option value="walking">🚶 Marche (en pas)</option>
+        </select>
+      </div>
+      <!-- Kcal field (all activities except walking) -->
+      <div class="form-group" id="lisaKcalGroup">
+        <label class="form-label">Kcal brûlées (total)</label>
+        <input type="number" class="form-input" id="lisaManual" placeholder="ex: 450" min="0" oninput="updatePreview('lisa')">
+      </div>
+      <!-- Steps field (walking only) -->
+      <div class="form-group" id="lisaStepsGroup" style="display:none">
+        <label class="form-label">Nombre de pas</label>
+        <input type="number" class="form-input" id="lisaSteps" placeholder="ex: 8000" min="0" oninput="updatePreview('lisa')">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Poids actuel (kg)</label>
+        <input type="number" class="form-input" id="lisaNewWeight" placeholder="Optionnel" min="30" max="300">
+      </div>
+      <div class="kcal-preview" id="lisaPreviewBox">Total : <strong id="lisaPreview">—</strong> kcal</div>
+      <button class="btn btn-lisa" onclick="addLog('lisa')">+ Ajouter la séance</button>
+
+      <!-- FAST FOOD -->
+      <div style="border-top:1px solid var(--border);margin-top:1rem;padding-top:1rem;">
+        <div style="font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:0.7rem;">🍔 Fast food du jour</div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:0.5rem;align-items:end;">
+          <div>
+            <label class="form-label">Nombre de fast foods</label>
+            <input type="number" class="form-input" id="lisaFF" placeholder="1" min="0" max="20">
+          </div>
+          <button class="btn btn-lisa" style="width:auto;padding:0.55rem 1rem;font-size:0.9rem;" onclick="addFastFood('lisa')">+ Ajouter</button>
+        </div>
+      </div>
+
+      <div class="log-history" id="lisaHistory"></div>
+    </div>
+  </div>
+
+  <!-- CHART -->
+  <div class="section-title">📊 Graphiques</div>
+  <div class="chart-section">
+    <div class="chart-tabs">
+      <button class="chart-tab active" onclick="switchChart('daily', this)">Par jour</button>
+      <button class="chart-tab" onclick="switchChart('cumul', this)">Cumulé</button>
+      <button class="chart-tab" onclick="switchChart('weight', this)">Poids</button>
+    </div>
+    <canvas id="mainChart" height="280"></canvas>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="section-title">⚙️ Paramètres</div>
+  <div class="settings-grid">
+    <div class="settings-card">
+      <div class="settings-title">Poids cibles (kcal totales)</div>
+      <div class="form-group">
+        <label class="form-label">Objectif Enzo</label>
+        <input type="number" class="form-input" id="enzoGoal" placeholder="10000" oninput="saveGoals()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Objectif Lisa</label>
+        <input type="number" class="form-input" id="lisaGoal" placeholder="10000" oninput="saveGoals()">
+      </div>
+    </div>
+    <div class="settings-card">
+      <div class="settings-title">Modifier les dates</div>
+      <div class="form-group">
+        <label class="form-label">Début du défi</label>
+        <input type="date" class="form-input" id="editStart" oninput="updateDates()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fin du défi</label>
+        <input type="date" class="form-input" id="editEnd" oninput="updateDates()">
+      </div>
+    </div>
+    <div class="settings-card">
+      <div class="settings-title">Danger Zone</div>
+      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:1rem;line-height:1.5;">Efface tout et recommence un nouveau défi.</p>
+      <button class="btn-danger" onclick="openModal('resetModal')">🗑️ Reset le défi</button>
+    </div>
+  </div>
+</main>
+
+<script>
+// =================== STATE ===================
+let state = {
+  start: null, end: null,
+  enzo: { weight: 85, kcal: 0, logs: [], ffLogs: [], avatar: null, goal: 10000 },
+  lisa: { weight: 60, kcal: 0, logs: [], ffLogs: [], avatar: null, goal: 10000 },
+};
+let currentAvatarPlayer = null;
+let mainChartInstance = null;
+let currentChartType = 'daily';
+
+// =================== INIT ===================
+function init() {
+  const saved = localStorage.getItem('fitbattle_v3');
+  if (saved) {
+    state = JSON.parse(saved);
+    closeModal('setupModal');
+    render();
+    renderChart(currentChartType);
+  } else {
+    const today = new Date();
+    const end = new Date(); end.setDate(end.getDate() + 30);
+    document.getElementById('setupStart').value = fmt(today);
+    document.getElementById('setupEnd').value = fmt(end);
+  }
+  // Set today's date in log forms
+  const today = fmt(new Date());
+  document.getElementById('enzoDate').value = today;
+  document.getElementById('lisaDate').value = today;
+}
+
+function fmt(d) {
+  return d.toISOString().split('T')[0];
+}
+
+function save() {
+  localStorage.setItem('fitbattle_v3', JSON.stringify(state));
+}
+
+// =================== CHALLENGE SETUP ===================
+function startChallenge() {
+  const start = document.getElementById('setupStart').value;
+  const end = document.getElementById('setupEnd').value;
+  const ew = parseFloat(document.getElementById('setupEnzoWeight').value) || 85;
+  const lw = parseFloat(document.getElementById('setupLisaWeight').value) || 60;
+  if (!start || !end) { alert('Remplis les dates !'); return; }
+  state.start = start;
+  state.end = end;
+  state.enzo.weight = ew;
+  state.lisa.weight = lw;
+  save();
+  closeModal('setupModal');
+  render();
+  renderChart(currentChartType);
+}
+
+function resetChallenge() {
+  localStorage.removeItem('fitbattle_v3');
+  location.reload();
+}
+
+function updateDates() {
+  state.start = document.getElementById('editStart').value || state.start;
+  state.end = document.getElementById('editEnd').value || state.end;
+  save();
+  render();
+}
+
+function saveGoals() {
+  state.enzo.goal = parseInt(document.getElementById('enzoGoal').value) || 10000;
+  state.lisa.goal = parseInt(document.getElementById('lisaGoal').value) || 10000;
+  save();
+  render();
+}
+
+// =================== ACTIVITY CALORIES ===================
+// Steps to kcal: ~0.04 kcal per step (varies by weight, we use weight factor)
+// Formula: steps * 0.0005 * weight (kg)  => approx 0.04 kcal/step at 80kg
+function stepsToKcal(steps, weight) {
+  return Math.round(steps * 0.0005 * (weight || 70));
+}
+
+const ACTIVITY_EMOJIS = {
+  running:'🏃', cycling:'🚴', swimming:'🏊',
+  weight:'🏋️', hiit:'⚡', boxing:'🥊', yoga:'🧘', walking:'🚶'
+};
+
+function updatePreview(player) {
+  const act = document.getElementById(`${player}Activity`).value;
+  const kcalGrp = document.getElementById(`${player}KcalGroup`);
+  const stepsGrp = document.getElementById(`${player}StepsGroup`);
+
+  if (act === 'walking') {
+    kcalGrp.style.display = 'none';
+    stepsGrp.style.display = '';
+    const steps = parseInt(document.getElementById(`${player}Steps`).value) || 0;
+    const kcal = stepsToKcal(steps, state[player].weight);
+    document.getElementById(`${player}Preview`).textContent = steps ? kcal : '—';
+    document.getElementById(`${player}PreviewBox`).innerHTML =
+      steps ? `🚶 ${steps.toLocaleString('fr-FR')} pas → <strong id="${player}Preview">${kcal}</strong> kcal estimées` :
+              `Total : <strong id="${player}Preview">—</strong> kcal`;
+  } else {
+    kcalGrp.style.display = '';
+    stepsGrp.style.display = 'none';
+    const v = parseInt(document.getElementById(`${player}Manual`).value) || 0;
+    document.getElementById(`${player}Preview`).textContent = v || '—';
+    document.getElementById(`${player}PreviewBox`).innerHTML =
+      `Total : <strong id="${player}Preview">${v || '—'}</strong> kcal`;
+  }
+}
+
+function calcKcal(player) {
+  const act = document.getElementById(`${player}Activity`).value;
+  if (act === 'walking') {
+    const steps = parseInt(document.getElementById(`${player}Steps`).value) || 0;
+    return stepsToKcal(steps, state[player].weight);
+  }
+  return parseInt(document.getElementById(`${player}Manual`).value) || 0;
+}
+
+// =================== ADD LOG ===================
+function addLog(player) {
+  const date = document.getElementById(`${player}Date`).value;
+  if (!date) { alert('Choisis une date !'); return; }
+  const kcal = calcKcal(player);
+  if (!kcal) { alert('Entre une valeur !'); return; }
+  const act = document.getElementById(`${player}Activity`).value;
+  const newWeight = parseFloat(document.getElementById(`${player}NewWeight`).value);
+  if (newWeight) state[player].weight = newWeight;
+
+  const steps = act === 'walking' ? (parseInt(document.getElementById(`${player}Steps`).value) || 0) : null;
+  state[player].logs.push({ date, kcal, act, steps });
+  state[player].kcal = state[player].logs.reduce((s, l) => s + l.kcal, 0);
+
+  // Reset form
+  document.getElementById(`${player}Manual`).value = '';
+  document.getElementById(`${player}Steps`).value = '';
+  document.getElementById(`${player}NewWeight`).value = '';
+  document.getElementById(`${player}PreviewBox`).innerHTML = `Total : <strong id="${player}Preview">—</strong> kcal`;
+
+  save(); render(); renderChart(currentChartType);
+}
+
+// =================== FAST FOOD ===================
+function addFastFood(player) {
+  const n = parseInt(document.getElementById(`${player}FF`).value) || 1;
+  const date = document.getElementById(`${player}Date`).value || fmt(new Date());
+  if (!state[player].ffLogs) state[player].ffLogs = [];
+  state[player].ffLogs.push({ date, count: n });
+  document.getElementById(`${player}FF`).value = '';
+  save(); render();
+}
+
+function deleteFastFood(player, idx) {
+  state[player].ffLogs.splice(idx, 1);
+  save(); render();
+}
+
+function deleteLog(player, idx) {
+  state[player].logs.splice(idx, 1);
+  state[player].kcal = state[player].logs.reduce((s, l) => s + l.kcal, 0);
+  save();
+  render();
+  renderChart(currentChartType);
+}
+
+// =================== RENDER ===================
+function render() {
+  const enzo = state.enzo, lisa = state.lisa;
+
+  // Dates
+  if (state.start && state.end) {
+    const s = new Date(state.start), e = new Date(state.end), now = new Date();
+    const total = Math.round((e - s) / 86400000);
+    const remaining = Math.max(0, Math.round((e - now) / 86400000));
+    document.getElementById('dateDisplay').innerHTML =
+      `<span>${state.start}</span> → <span>${state.end}</span>`;
+    document.getElementById('daysLeft').textContent =
+      remaining > 0 ? `${remaining}j restants` : '⏱ Terminé';
+    document.getElementById('editStart').value = state.start;
+    document.getElementById('editEnd').value = state.end;
+  }
+
+  // Kcal
+  document.getElementById('enzoKcal').textContent = enzo.kcal.toLocaleString('fr-FR');
+  document.getElementById('lisaKcal').textContent = lisa.kcal.toLocaleString('fr-FR');
+
+  // Weight
+  document.getElementById('enzoWeight').textContent = `${enzo.weight} kg`;
+  document.getElementById('lisaWeight').textContent = `${lisa.weight} kg`;
+
+  // Sessions
+  document.getElementById('enzoSessions').textContent = enzo.logs.length;
+  document.getElementById('lisaSessions').textContent = lisa.logs.length;
+
+  // Avg & Best
+  const enzoAvg = enzo.logs.length ? Math.round(enzo.kcal / enzo.logs.length) : 0;
+  const lisaAvg = lisa.logs.length ? Math.round(lisa.kcal / lisa.logs.length) : 0;
+  document.getElementById('enzoAvg').textContent = enzoAvg ? `${enzoAvg} kcal` : '—';
+  document.getElementById('lisaAvg').textContent = lisaAvg ? `${lisaAvg} kcal` : '—';
+
+  const enzoBest = enzo.logs.length ? Math.max(...enzo.logs.map(l => l.kcal)) : 0;
+  const lisaBest = lisa.logs.length ? Math.max(...lisa.logs.map(l => l.kcal)) : 0;
+  document.getElementById('enzoBest').textContent = enzoBest ? `${enzoBest} kcal` : '—';
+  document.getElementById('lisaBest').textContent = lisaBest ? `${lisaBest} kcal` : '—';
+
+  // Fast food counts
+  const enzoFF = (enzo.ffLogs||[]).reduce((s, f) => s + f.count, 0);
+  const lisaFF = (lisa.ffLogs||[]).reduce((s, f) => s + f.count, 0);
+  document.getElementById('enzoFFCount').textContent = enzoFF || 0;
+  document.getElementById('lisaFFCount').textContent = lisaFF || 0;
+
+  // Progress bars
+  const enzoPct = Math.min(100, Math.round(enzo.kcal / (enzo.goal||10000) * 100));
+  const lisaPct = Math.min(100, Math.round(lisa.kcal / (lisa.goal||10000) * 100));
+  document.getElementById('enzoBar').style.width = enzoPct + '%';
+  document.getElementById('lisaBar').style.width = lisaPct + '%';
+  document.getElementById('enzoPct').textContent = enzoPct + '%';
+  document.getElementById('lisaPct').textContent = lisaPct + '%';
+
+  // Goals inputs
+  document.getElementById('enzoGoal').value = enzo.goal || 10000;
+  document.getElementById('lisaGoal').value = lisa.goal || 10000;
+
+  // Leader
+  const diff = Math.abs(enzo.kcal - lisa.kcal);
+  document.getElementById('diffText').textContent = diff.toLocaleString('fr-FR') + ' kcal';
+  const enzoCard = document.getElementById('enzoCard');
+  const lisaCard = document.getElementById('lisaCard');
+  document.getElementById('enzoCrown').style.display = 'none';
+  document.getElementById('lisaCrown').style.display = 'none';
+  enzoCard.classList.remove('leader'); lisaCard.classList.remove('leader');
+
+  if (enzo.kcal > lisa.kcal) {
+    document.getElementById('enzoCrown').style.display = 'inline';
+    enzoCard.classList.add('leader');
+    document.getElementById('enzoBadge').textContent = '👑 Leader';
+    document.getElementById('lisaBadge').textContent = 'Challenger';
+  } else if (lisa.kcal > enzo.kcal) {
+    document.getElementById('lisaCrown').style.display = 'inline';
+    lisaCard.classList.add('leader');
+    document.getElementById('lisaBadge').textContent = '👑 Leader';
+    document.getElementById('enzoBadge').textContent = 'Challenger';
+  } else {
+    document.getElementById('enzoBadge').textContent = 'Challenger';
+    document.getElementById('lisaBadge').textContent = 'Challenger';
+  }
+
+  // Winner banner (if challenge ended)
+  if (state.end && new Date() > new Date(state.end)) {
+    const banner = document.getElementById('winnerBanner');
+    const txt = document.getElementById('winnerText');
+    banner.classList.add('show');
+    if (enzo.kcal > lisa.kcal) txt.textContent = '🏆 Enzo remporte le défi avec ' + enzo.kcal.toLocaleString('fr-FR') + ' kcal !';
+    else if (lisa.kcal > enzo.kcal) txt.textContent = '🏆 Lisa remporte le défi avec ' + lisa.kcal.toLocaleString('fr-FR') + ' kcal !';
+    else txt.textContent = '🤝 Égalité parfaite — vous méritez tous les deux !';
+  }
+
+  // Avatars
+  renderAvatar('enzo');
+  renderAvatar('lisa');
+
+  // History
+  renderHistory('enzo');
+  renderHistory('lisa');
+}
+
+function renderAvatar(player) {
+  const el = document.getElementById(`${player}Avatar`);
+  if (state[player].avatar) {
+    el.innerHTML = `<img src="${state[player].avatar}" alt="${player}" onerror="this.parentElement.innerHTML='${player === 'enzo' ? '🧑' : '👩'}'">`;
+  }
+}
+
+function renderHistory(player) {
+  const logs = [...state[player].logs].reverse();
+  const ffLogs = [...(state[player].ffLogs||[])].reverse();
+  const el = document.getElementById(`${player}History`);
+
+  let html = '';
+
+  if (!logs.length && !ffLogs.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:0.75rem;padding:0.5rem 0;">Aucune entrée enregistrée</div>';
+    return;
+  }
+
+  if (logs.length) {
+    html += `<div style="font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);padding:0.5rem 0 0.3rem;">💪 Séances</div>`;
+    html += logs.map((l, i) => {
+      const realIdx = state[player].logs.length - 1 - i;
+      const stepsInfo = l.steps ? ` · ${l.steps.toLocaleString('fr-FR')} pas` : '';
+      return `<div class="log-entry">
+        <span class="log-entry-date">${l.date}</span>
+        <span>${ACTIVITY_EMOJIS[l.act] || '💪'}${stepsInfo}</span>
+        <span class="log-entry-kcal">${l.kcal} kcal</span>
+        <button class="log-entry-del" onclick="deleteLog('${player}', ${realIdx})">✕</button>
+      </div>`;
+    }).join('');
+  }
+
+  if (ffLogs.length) {
+    html += `<div style="font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);padding:0.5rem 0 0.3rem;margin-top:0.3rem;">🍔 Fast foods</div>`;
+    html += ffLogs.map((f, i) => {
+      const realIdx = (state[player].ffLogs||[]).length - 1 - i;
+      return `<div class="log-entry">
+        <span class="log-entry-date">${f.date}</span>
+        <span>🍔 × ${f.count}</span>
+        <span class="log-entry-kcal" style="color:#f87171">${f.count} fast food${f.count > 1 ? 's' : ''}</span>
+        <button class="log-entry-del" onclick="deleteFastFood('${player}', ${realIdx})">✕</button>
+      </div>`;
+    }).join('');
+  }
+
+  el.innerHTML = html;
+}
+
+// =================== CHART ===================
+function getAllDates() {
+  const dates = new Set();
+  [...state.enzo.logs, ...state.lisa.logs].forEach(l => dates.add(l.date));
+  return [...dates].sort();
+}
+
+function switchChart(type, btn) {
+  document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  currentChartType = type;
+  renderChart(type);
+}
+
+function renderChart(type) {
+  const ctx = document.getElementById('mainChart').getContext('2d');
+  if (mainChartInstance) mainChartInstance.destroy();
+
+  const dates = getAllDates();
+  if (!dates.length) {
+    mainChartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: { labels: ['Aucune donnée'], datasets: [] },
+      options: { plugins: { legend: { display: false } } }
+    });
+    return;
+  }
+
+  let labels, enzoData, lisaData;
+
+  if (type === 'daily') {
+    labels = dates;
+    enzoData = dates.map(d => state.enzo.logs.filter(l => l.date === d).reduce((s, l) => s + l.kcal, 0));
+    lisaData = dates.map(d => state.lisa.logs.filter(l => l.date === d).reduce((s, l) => s + l.kcal, 0));
+    mainChartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Enzo', data: enzoData, backgroundColor: 'rgba(255,107,53,0.7)', borderColor: '#ff6b35', borderWidth: 1, borderRadius: 4 },
+          { label: 'Lisa', data: lisaData, backgroundColor: 'rgba(0,212,170,0.7)', borderColor: '#00d4aa', borderWidth: 1, borderRadius: 4 },
+        ]
+      },
+      options: chartOpts('Kcal brûlées par jour')
+    });
+  } else if (type === 'cumul') {
+    labels = dates;
+    let enzoSum = 0, lisaSum = 0;
+    enzoData = dates.map(d => { enzoSum += state.enzo.logs.filter(l => l.date === d).reduce((s, l) => s + l.kcal, 0); return enzoSum; });
+    lisaData = dates.map(d => { lisaSum += state.lisa.logs.filter(l => l.date === d).reduce((s, l) => s + l.kcal, 0); return lisaSum; });
+    mainChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Enzo', data: enzoData, borderColor: '#ff6b35', backgroundColor: 'rgba(255,107,53,0.1)', fill: true, tension: 0.3, pointBackgroundColor: '#ff6b35' },
+          { label: 'Lisa', data: lisaData, borderColor: '#00d4aa', backgroundColor: 'rgba(0,212,170,0.1)', fill: true, tension: 0.3, pointBackgroundColor: '#00d4aa' },
+        ]
+      },
+      options: chartOpts('Kcal cumulées')
+    });
+  } else {
+    // Weight chart
+    const enzoWeightLogs = state.enzo.logs.filter(l => l.weight).map(l => ({ x: l.date, y: l.weight }));
+    const lisaWeightLogs = state.lisa.logs.filter(l => l.weight).map(l => ({ x: l.date, y: l.weight }));
+    mainChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        datasets: [
+          { label: 'Enzo (kg)', data: enzoWeightLogs, borderColor: '#ff6b35', backgroundColor: 'rgba(255,107,53,0.1)', pointBackgroundColor: '#ff6b35', tension: 0.3 },
+          { label: 'Lisa (kg)', data: lisaWeightLogs, borderColor: '#00d4aa', backgroundColor: 'rgba(0,212,170,0.1)', pointBackgroundColor: '#00d4aa', tension: 0.3 },
+        ]
+      },
+      options: { ...chartOpts('Évolution du poids'), scales: { x: { type: 'category', ...axisStyle() }, y: { ...axisStyle() } } }
+    });
+  }
+}
+
+function axisStyle() {
+  return {
+    ticks: { color: '#4a5568', font: { family: 'Barlow' } },
+    grid: { color: 'rgba(255,255,255,0.04)' },
+    border: { color: 'transparent' }
+  };
+}
+
+function chartOpts(title) {
+  return {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { labels: { color: '#e8edf5', font: { family: 'Barlow', size: 12 }, boxWidth: 12 } },
+      tooltip: {
+        backgroundColor: '#131720',
+        borderColor: '#1e2535',
+        borderWidth: 1,
+        titleColor: '#e8edf5',
+        bodyColor: '#4a5568',
+        padding: 10,
+      }
+    },
+    scales: {
+      x: axisStyle(),
+      y: axisStyle()
+    }
+  };
+}
+
+// =================== AVATAR ===================
+function openAvatarModal(player) {
+  currentAvatarPlayer = player;
+  document.getElementById('avatarModalTitle').textContent =
+    `Photo de ${player === 'enzo' ? 'Enzo' : 'Lisa'}`;
+  document.getElementById('avatarUrl').value = state[player].avatar || '';
+  openModal('avatarModal');
+}
+
+function saveAvatar() {
+  const url = document.getElementById('avatarUrl').value.trim();
+  const file = document.getElementById('avatarFile').files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      state[currentAvatarPlayer].avatar = e.target.result;
+      save(); render(); closeModal('avatarModal');
+    };
+    reader.readAsDataURL(file);
+  } else if (url) {
+    state[currentAvatarPlayer].avatar = url;
+    save(); render(); closeModal('avatarModal');
+  } else {
+    closeModal('avatarModal');
+  }
+}
+
+// =================== MODALS ===================
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m && m.id !== 'setupModal') closeModal(m.id); });
+});
+
+// =================== START ===================
+init();
+</script>
+</body>
+</html>
